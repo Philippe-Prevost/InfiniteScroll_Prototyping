@@ -8,19 +8,17 @@
             margin: 0;
             padding: 0;
             overflow: hidden;
-            font-family: sans-serif;
             background: black;
-            color: white;
         }
 
-        .video {
+        video {
             position: absolute;
             width: 100vw;
             height: 100vh;
             object-fit: cover;
             top: 0;
             left: 0;
-            transition: opacity 0.3s ease;
+            transition: opacity 0.2s ease;
         }
 
         #label {
@@ -28,126 +26,130 @@
             top: 10px;
             left: 10px;
             z-index: 10;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 5px 10px;
+            color: white;
+            background: rgba(0,0,0,0.5);
+            padding: 6px 10px;
             border-radius: 5px;
+            font-family: sans-serif;
         }
     </style>
 </head>
 
 <body>
 
-    <div id="label">Feed A</div>
-    <video id="video" class="video" autoplay muted loop playsinline></video>
+<div id="label">Feed A</div>
+<video id="video" autoplay muted loop playsinline></video>
 
-    <script>
-        const feeds = ["A", "B", "C"];
-        let currentFeed = 0;
-        let currentIndex = 0;
-        let scrollCount = 0;
+<script>
+const feeds = ["A","B","C"];
+let currentFeed = 0;
+let scrollCount = 0;
 
-        // ✅ YOUR LOCAL VIDEO
-        const videos = [
-            "videos/PartyFun.mp4"
-        ];
+// ✅ MATCHES YOUR GITHUB STRUCTURE (ROOT FILES)
+const videos = [
+    "12146364_1080_1920_60fps.mp4",
+    "13404872_1080_1920_60fps.mp4",
+    "15823028_1080_1920_30fps.mp4",
+    "7334473-hd_1080_1920_25fps.mp4",
+    "8034250-hd_1080_1920_30fps.mp4"
+];
 
-        const videoEl = document.getElementById("video");
-        const label = document.getElementById("label");
+let currentIndex = 0;
 
-        // --- CORE FUNCTION ---
-        function showVideo(index) {
-            videoEl.style.opacity = 0;
+const videoEl = document.getElementById("video");
+const label = document.getElementById("label");
 
-            let delay = 0;
+// --- LOAD VIDEO ---
+function showVideo(index){
+    videoEl.style.opacity = 0;
 
-            // Feed B → explicit friction
-            if (feeds[currentFeed] === "B") {
-                delay = 800;
-                label.innerText = "Pause...";
-            }
+    let delay = 0;
 
-            // Feed C → implicit friction
-            if (feeds[currentFeed] === "C") {
-                delay = Math.random() * 1000;
-            }
+    // Feed B → explicit friction
+    if(feeds[currentFeed]==="B"){
+        delay = 800;
+        label.innerText = "Pause...";
+    }
 
-            // Fatigue effect (progressive friction)
-            let fatigue = Math.min(scrollCount * 50, 500);
-            delay += fatigue;
+    // Feed C → implicit friction
+    if(feeds[currentFeed]==="C"){
+        delay = Math.random()*1000;
+    }
 
-            setTimeout(() => {
-                const file = videos[index % videos.length];
+    // progressive fatigue friction
+    let fatigue = Math.min(scrollCount * 40, 400);
+    delay += fatigue;
 
-                videoEl.src = file;
-                videoEl.load(); // important
-                videoEl.play();
+    setTimeout(()=>{
+        const file = videos[index % videos.length];
 
-                videoEl.style.opacity = 1;
-                label.innerText = "Feed " + feeds[currentFeed];
-            }, delay);
-        }
+        videoEl.src = file;
+        videoEl.load();
+        videoEl.play();
 
-        // --- SWIPE DETECTION ---
-        let startX = 0;
-        let startY = 0;
+        videoEl.style.opacity = 1;
+        label.innerText = "Feed " + feeds[currentFeed];
+    }, delay);
+}
 
-        document.addEventListener("touchstart", (e) => {
-            startX = e.touches[0].clientX;
-            startY = e.touches[0].clientY;
-        });
+// --- NEXT VIDEO ---
+function nextVideo(){
+    scrollCount++;
 
-        document.addEventListener("touchend", (e) => {
-            let dx = e.changedTouches[0].clientX - startX;
-            let dy = e.changedTouches[0].clientY - startY;
+    currentIndex = Math.floor(Math.random()*videos.length);
 
-            // Vertical swipe → next video
-            if (Math.abs(dy) > Math.abs(dx)) {
-                if (dy < -50) nextVideo();
-            }
+    logInteraction();
+    showVideo(currentIndex);
+}
 
-            // Horizontal swipe → switch feed
-            else {
-                if (dx > 50) switchFeed(-1);
-                if (dx < -50) switchFeed(1);
-            }
-        });
+// --- SWIPE ---
+let startX=0, startY=0;
 
-        function nextVideo() {
-            scrollCount++;
+document.addEventListener("touchstart", e=>{
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+});
 
-            // random selection (more realistic feed)
-            currentIndex = Math.floor(Math.random() * videos.length);
+document.addEventListener("touchend", e=>{
+    let dx = e.changedTouches[0].clientX - startX;
+    let dy = e.changedTouches[0].clientY - startY;
 
-            logInteraction();
-            showVideo(currentIndex);
-        }
+    if(Math.abs(dy)>Math.abs(dx)){
+        if(dy < -50) nextVideo();
+    } else {
+        if(dx > 50) switchFeed(-1);
+        if(dx < -50) switchFeed(1);
+    }
+});
 
-        function switchFeed(direction) {
-            currentFeed += direction;
+// --- SWITCH FEED ---
+function switchFeed(dir){
+    currentFeed += dir;
 
-            if (currentFeed < 0) currentFeed = feeds.length - 1;
-            if (currentFeed >= feeds.length) currentFeed = 0;
+    if(currentFeed < 0) currentFeed = feeds.length-1;
+    if(currentFeed >= feeds.length) currentFeed = 0;
 
-            label.innerText = "Feed " + feeds[currentFeed];
-        }
+    label.innerText = "Feed " + feeds[currentFeed];
+}
 
-        // --- LOGGING (for your study) ---
-        let logs = [];
+// --- LOGGING (for study) ---
+let logs = [];
 
-        function logInteraction() {
-            logs.push({
-                time: Date.now(),
-                feed: feeds[currentFeed],
-                index: currentIndex,
-                scrollCount: scrollCount
-            });
+function logInteraction(){
+    logs.push({
+        time: Date.now(),
+        feed: feeds[currentFeed],
+        index: currentIndex,
+        scrollCount: scrollCount
+    });
 
-            console.log(logs);
-        }
+    console.log(logs);
+}
 
-        // INIT
-        showVideo(currentIndex);
-    </script>
+// INIT
+showVideo(currentIndex);
+
+</script>
 
 </body>
 
