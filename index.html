@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: sans-serif;
+            background: black;
+            color: white;
+        }
+
+        .video {
+            position: absolute;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            top: 0;
+            left: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #label {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="label">Feed A</div>
+    <video id="video" class="video" autoplay muted loop playsinline></video>
+
+    <script>
+        const feeds = ["A", "B", "C"];
+        let currentFeed = 0;
+        let currentIndex = 0;
+        let scrollCount = 0;
+
+        // ✅ YOUR LOCAL VIDEO
+        const videos = [
+            "videos/PartyFun.mp4"
+        ];
+
+        const videoEl = document.getElementById("video");
+        const label = document.getElementById("label");
+
+        // --- CORE FUNCTION ---
+        function showVideo(index) {
+            videoEl.style.opacity = 0;
+
+            let delay = 0;
+
+            // Feed B → explicit friction
+            if (feeds[currentFeed] === "B") {
+                delay = 800;
+                label.innerText = "Pause...";
+            }
+
+            // Feed C → implicit friction
+            if (feeds[currentFeed] === "C") {
+                delay = Math.random() * 1000;
+            }
+
+            // Fatigue effect (progressive friction)
+            let fatigue = Math.min(scrollCount * 50, 500);
+            delay += fatigue;
+
+            setTimeout(() => {
+                const file = videos[index % videos.length];
+
+                videoEl.src = file;
+                videoEl.load(); // important
+                videoEl.play();
+
+                videoEl.style.opacity = 1;
+                label.innerText = "Feed " + feeds[currentFeed];
+            }, delay);
+        }
+
+        // --- SWIPE DETECTION ---
+        let startX = 0;
+        let startY = 0;
+
+        document.addEventListener("touchstart", (e) => {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+        });
+
+        document.addEventListener("touchend", (e) => {
+            let dx = e.changedTouches[0].clientX - startX;
+            let dy = e.changedTouches[0].clientY - startY;
+
+            // Vertical swipe → next video
+            if (Math.abs(dy) > Math.abs(dx)) {
+                if (dy < -50) nextVideo();
+            }
+
+            // Horizontal swipe → switch feed
+            else {
+                if (dx > 50) switchFeed(-1);
+                if (dx < -50) switchFeed(1);
+            }
+        });
+
+        function nextVideo() {
+            scrollCount++;
+
+            // random selection (more realistic feed)
+            currentIndex = Math.floor(Math.random() * videos.length);
+
+            logInteraction();
+            showVideo(currentIndex);
+        }
+
+        function switchFeed(direction) {
+            currentFeed += direction;
+
+            if (currentFeed < 0) currentFeed = feeds.length - 1;
+            if (currentFeed >= feeds.length) currentFeed = 0;
+
+            label.innerText = "Feed " + feeds[currentFeed];
+        }
+
+        // --- LOGGING (for your study) ---
+        let logs = [];
+
+        function logInteraction() {
+            logs.push({
+                time: Date.now(),
+                feed: feeds[currentFeed],
+                index: currentIndex,
+                scrollCount: scrollCount
+            });
+
+            console.log(logs);
+        }
+
+        // INIT
+        showVideo(currentIndex);
+    </script>
+
+</body>
+
+</html>
