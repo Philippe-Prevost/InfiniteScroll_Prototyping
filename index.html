@@ -2,105 +2,108 @@
 <html>
 
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            background: black;
-        }
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body, html {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: black;
+}
 
-        video {
-            position: absolute;
-            width: 100vw;
-            height: 100vh;
-            object-fit: cover;
-            top: 0;
-            left: 0;
-            transition: opacity 0.2s ease;
-        }
+video {
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    top: 0;
+    left: 0;
+}
 
-        #label {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            z-index: 10;
-            color: white;
-            background: rgba(0,0,0,0.5);
-            padding: 6px 10px;
-            border-radius: 5px;
-            font-family: sans-serif;
-        }
-    </style>
+#label {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    color: white;
+    background: rgba(0,0,0,0.5);
+    padding: 6px 10px;
+    z-index: 10;
+}
+</style>
 </head>
 
 <body>
 
 <div id="label">Feed A</div>
-<video id="video" autoplay muted loop playsinline></video>
+<video id="video" autoplay muted playsinline loop></video>
 
 <script>
 const feeds = ["A","B","C"];
 let currentFeed = 0;
 let scrollCount = 0;
 
-// ✅ MATCHES YOUR GITHUB STRUCTURE (ROOT FILES)
+// ✅ ALL YOUR VIDEOS
 const videos = [
-    "12146364_1080_1920_60fps.mp4",
-    "13404872_1080_1920_60fps.mp4",
-    "15823028_1080_1920_30fps.mp4",
-    "7334473-hd_1080_1920_25fps.mp4",
-    "8034250-hd_1080_1920_30fps.mp4"
+"12146364_1080_1920_60fps.mp4",
+"13404872_1080_1920_60fps.mp4",
+"14677839_1920_1080_60fps.mp4",
+"14909964_3840_2160_50fps.mp4",
+"15823028_1080_1920_30fps.mp4",
+"3064219-hd_1920_1080_24fps.mp4",
+"7334473-hd_1080_1920_25fps.mp4",
+"8034250-hd_1080_1920_30fps.mp4",
+"8480433-hd_1920_1080_25fps.mp4",
+"8811045-hd_1920_1080_25fps.mp4",
+"PartyFun.mp4"
 ];
 
 let currentIndex = 0;
 
-const videoEl = document.getElementById("video");
+const video = document.getElementById("video");
 const label = document.getElementById("label");
 
-// --- LOAD VIDEO ---
-function showVideo(index){
-    videoEl.style.opacity = 0;
+// --- LOAD VIDEO SAFELY ---
+function loadVideo(index){
+
+    const file = videos[index % videos.length];
+
+    video.src = file;
+    video.load();
+
+    video.play().catch(() => {
+        console.log("Autoplay blocked, retry");
+    });
+}
+
+// --- MAIN SWITCH ---
+function nextVideo(){
+
+    scrollCount++;
 
     let delay = 0;
 
-    // Feed B → explicit friction
-    if(feeds[currentFeed]==="B"){
-        delay = 800;
-        label.innerText = "Pause...";
-    }
+    if(feeds[currentFeed]==="B") delay = 700;
+    if(feeds[currentFeed]==="C") delay = Math.random()*900;
 
-    // Feed C → implicit friction
-    if(feeds[currentFeed]==="C"){
-        delay = Math.random()*1000;
-    }
-
-    // progressive fatigue friction
-    let fatigue = Math.min(scrollCount * 40, 400);
+    let fatigue = Math.min(scrollCount*40, 400);
     delay += fatigue;
 
     setTimeout(()=>{
-        const file = videos[index % videos.length];
 
-        videoEl.src = file;
-        videoEl.load();
-        videoEl.play();
+        currentIndex = (currentIndex + 1) % videos.length;
 
-        videoEl.style.opacity = 1;
+        loadVideo(currentIndex);
+
         label.innerText = "Feed " + feeds[currentFeed];
+
     }, delay);
 }
 
-// --- NEXT VIDEO ---
-function nextVideo(){
-    scrollCount++;
-
-    currentIndex = Math.floor(Math.random()*videos.length);
-
-    logInteraction();
-    showVideo(currentIndex);
-}
+// --- HANDLE VIDEO FAIL (CRITICAL) ---
+video.addEventListener("error", ()=>{
+    console.log("Video failed, skipping...");
+    nextVideo();
+});
 
 // --- SWIPE ---
 let startX=0, startY=0;
@@ -126,29 +129,14 @@ document.addEventListener("touchend", e=>{
 function switchFeed(dir){
     currentFeed += dir;
 
-    if(currentFeed < 0) currentFeed = feeds.length-1;
-    if(currentFeed >= feeds.length) currentFeed = 0;
+    if(currentFeed<0) currentFeed = feeds.length-1;
+    if(currentFeed>=feeds.length) currentFeed=0;
 
     label.innerText = "Feed " + feeds[currentFeed];
 }
 
-// --- LOGGING (for study) ---
-let logs = [];
-
-function logInteraction(){
-    logs.push({
-        time: Date.now(),
-        feed: feeds[currentFeed],
-        index: currentIndex,
-        scrollCount: scrollCount
-    });
-
-    console.log(logs);
-}
-
 // INIT
-showVideo(currentIndex);
-
+loadVideo(0);
 </script>
 
 </body>
